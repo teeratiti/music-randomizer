@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Randomizer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --cream:        #FCF2C5;
+      --cream-dark:   #F5E8A8;
+      --cream-border: #EAD990;
+      --orange:       #F4AB6A;
+      --orange-dark:  #D4823A;
+      --orange-deep:  #B5621E;
+      --orange-pale:  rgba(244,171,106,0.18);
+      --text:         #3A2208;
+      --text-mid:     #7A5530;
+      --text-muted:   #A8895A;
+      --white:        #FFFFFF;
+      --card-border:  #E6D8A0;
+    }
+
+    body {
+      background: var(--cream);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--orange);
+      text-align: center;
+      padding: 48px 24px 36px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before, header::after { display: none; }
+
+    header h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 900;
+      color: var(--white);
+      letter-spacing: -0.5px;
+      position: relative; z-index: 1;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    header p {
+      color: rgba(255,255,255,0.85);
+      margin-top: 6px;
+      font-size: 0.98rem;
+      position: relative; z-index: 1;
+    }
+
+    /* ── CONTAINER ── */
+    .container {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 36px 20px 80px;
+    }
+
+    /* ── ADD ARTIST BAR ── */
+    .add-bar {
+      background: var(--white);
+      border: 2px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 12px rgba(180,130,60,0.08);
+    }
+
+    .add-bar-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-mid);
+      white-space: nowrap;
+    }
+
+    .add-bar input {
+      flex: 1;
+      min-width: 160px;
+      padding: 10px 14px;
+      border: 1.5px solid var(--card-border);
+      border-radius: 10px;
+      background: var(--cream);
+      color: var(--text);
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .add-bar input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(244,171,106,0.25);
+      background: var(--white);
+    }
+
+    .add-bar input::placeholder { color: var(--text-muted); }
+
+    .btn-add {
+      padding: 10px 22px;
+      background: var(--orange);
+      color: var(--white);
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+
+    .btn-add:hover  { background: var(--orange-dark); transform: translateY(-1px); }
+    .btn-add:active { transform: scale(0.97); }
+    .btn-add:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .add-error {
+      width: 100%;
+      font-size: 0.78rem;
+      color: #C0392B;
+      margin-top: 2px;
+      display: none;
+    }
+
+    /* ── CONTROLS ── */
+    .controls-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--orange-deep);
+      margin-right: 4px;
+    }
+
+    .btn-sm {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--card-border);
+      background: var(--white);
+      color: var(--text-mid);
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-sm:hover {
+      border-color: var(--orange);
+      color: var(--orange-deep);
+      background: var(--orange-pale);
+    }
+
+    /* ── SEARCH ── */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      background: var(--white);
+      border: 1.5px solid var(--card-border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-wrap input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(244,171,106,0.2);
+    }
+
+    .search-wrap input::placeholder { color: var(--text-muted); }
+    .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); opacity: 0.45; font-size: 0.9rem; }
+
+    /* ── ARTIST GRID ── */
+    .artist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .artist-card {
+      background: var(--white);
+      border: 2px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px 10px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .artist-card:hover {
+      border-color: var(--orange);
+      background: #FFFDF5;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(244,171,106,0.22);
+    }
+
+    .artist-card.selected {
+      border-color: var(--orange);
+      background: #FFFBEE;
+      box-shadow: 0 3px 14px rgba(244,171,106,0.3);
+    }
+
+    .artist-card.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .artist-card .avatar {
+      font-size: 2rem;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .artist-card .name {
+      font-size: 0.76rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--text);
+    }
+
+    .artist-card .song-count {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .artist-card.selected .song-count { color: var(--orange-dark); font-weight: 600; }
+
+    .checkmark {
+      position: absolute;
+      top: 6px; right: 8px;
+      font-size: 0.72rem;
+      color: var(--orange-dark);
+      opacity: 0;
+      transition: opacity 0.15s;
+      font-weight: 900;
+    }
+
+    .artist-card.selected .checkmark { opacity: 1; }
+
+    .delete-btn {
+      position: absolute;
+      top: 5px; left: 7px;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      transition: all 0.15s;
+      z-index: 3;
+      line-height: 1;
+    }
+
+    .delete-btn:hover { color: #C0392B; background: #FFE5E5; }
+
+    .custom-dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--orange);
+      margin-top: 4px;
+      vertical-align: middle;
+    }
+
+    /* spinner inside card */
+    .card-spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid var(--card-border);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: cspin 0.7s linear infinite;
+      margin-bottom: 6px;
+    }
+
+    @keyframes cspin { to { transform: rotate(360deg); } }
+
+    .no-match {
+      text-align: center;
+      padding: 16px;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      display: none;
+    }
+
+    /* ── SPIN BUTTON ── */
+    .spin-wrap {
+      text-align: center;
+      margin: 32px 0;
+    }
+
+    .spin-btn {
+      padding: 18px 56px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+      border: none;
+      border-radius: 50px;
+      color: var(--white);
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(212,130,58,0.4), 0 2px 6px rgba(0,0,0,0.06);
+      transition: all 0.2s ease;
+    }
+
+    .spin-btn:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 10px 32px rgba(212,130,58,0.5);
+    }
+
+    .spin-btn:active { transform: scale(0.97); }
+
+    .spin-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .spin-btn.spinning { animation: bop 0.35s ease; }
+
+    @keyframes bop {
+      0%  { transform: scale(1); }
+      40% { transform: scale(0.93); }
+      100%{ transform: scale(1); }
+    }
+
+    .spin-hint {
+      margin-top: 10px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    /* ── RESULT CARD ── */
+    .result-card {
+      background: var(--white);
+      border: 2px solid var(--orange);
+      border-radius: 20px;
+      padding: 28px 30px;
+      display: none;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 6px 28px rgba(244,171,106,0.2);
+      animation: slideUp 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .result-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--orange), var(--orange-dark), var(--orange));
+    }
+
+    .result-card.show { display: block; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-inner {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      flex-wrap: wrap;
+    }
+
+    .result-disc {
+      width: 86px; height: 86px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem;
+      flex-shrink: 0;
+      box-shadow: 0 4px 18px rgba(244,171,106,0.4);
+      animation: spin 6s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .result-info { flex: 1; min-width: 200px; }
+
+    .result-label {
+      font-size: 0.62rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--orange-dark);
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .result-title {
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 900;
+      line-height: 1.2;
+      color: var(--text);
+    }
+
+    .result-artist {
+      font-size: 1rem;
+      color: var(--text-mid);
+      margin-top: 4px;
+    }
+
+    .result-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .btn-play {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 22px;
+      background: #FF0000;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 700; font-size: 0.88rem;
+      transition: all 0.18s;
+      border: none; cursor: pointer;
+    }
+
+    .btn-play:hover { background: #CC0000; transform: translateY(-2px); box-shadow: 0 4px 14px rgba(200,0,0,0.25); }
+
+    .btn-another {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 18px;
+      background: var(--orange-pale);
+      color: var(--orange-dark);
+      border: 2px solid var(--orange);
+      border-radius: 8px;
+      font-weight: 700; font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .btn-another:hover { background: var(--orange); color: var(--white); }
+
+    /* ── DIVIDER ── */
+    .divider { border: none; border-top: 1.5px solid var(--cream-border); margin: 32px 0; }
+
+    /* ── HISTORY ── */
+    .history-list { display: flex; flex-direction: column; gap: 7px; }
+
+    .history-item {
+      background: var(--white);
+      border: 1.5px solid var(--card-border);
+      border-radius: 10px;
+      padding: 11px 16px;
+      display: flex; align-items: center; gap: 12px;
+      text-decoration: none; color: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .history-item:hover { border-color: var(--orange); box-shadow: 0 2px 10px rgba(244,171,106,0.15); }
+
+    .history-num { font-size: 0.66rem; color: var(--text-muted); width: 16px; text-align: right; flex-shrink: 0; }
+    .history-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
+    .history-info { flex: 1; }
+    .history-song   { font-size: 0.86rem; font-weight: 700; }
+    .history-artist { font-size: 0.72rem; color: var(--text-muted); }
+    .history-yt { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+    .history-item:hover .history-yt { color: #FF0000; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📻</h1>
+  <p>random random for p'mon :3</p>
+</header>
+
+<div class="container">
+
+  <!-- ── ADD ARTIST ── -->
+  <div class="add-bar">
+    <span class="add-bar-label">🎤 Add Artist</span>
+    <input type="text" id="newArtistInput" placeholder="e.g. Olivia Rodrigo, Sabrina Carpenter…"
+           maxlength="60" onkeydown="if(event.key==='Enter') addArtist()" />
+    <button class="btn-add" id="addBtn" onclick="addArtist()">Add</button>
+    <div class="add-error" id="addError"></div>
+  </div>
+
+  <!-- ── CONTROLS ── -->
+  <div class="controls-row">
+    <span class="section-label">Artists</span>
+    <button class="btn-sm" onclick="selectAll()">Select All</button>
+    <button class="btn-sm" onclick="clearAll()">Clear All</button>
+    <button class="btn-sm" onclick="removeAll()">Remove All</button>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="filterInput" placeholder="Filter artists…" oninput="renderGrid()" />
+  </div>
+
+  <div class="artist-grid" id="artistGrid"></div>
+  <div class="no-match" id="noMatch">No artists match your filter.</div>
+
+  <!-- ── SPIN ── -->
+  <div class="spin-wrap">
+    <button class="spin-btn" id="spinBtn" onclick="randomize()">🎲 &nbsp; Random Song</button>
+    <div class="spin-hint" id="spinHint">Select at least one artist above</div>
+  </div>
+
+  <!-- ── RESULT ── -->
+  <div class="result-card" id="resultCard">
+    <div class="result-inner">
+      <div class="result-disc" id="resultDisc">🎵</div>
+      <div class="result-info">
+        <div class="result-label">Now Playing</div>
+        <div class="result-title" id="resultTitle">—</div>
+        <div class="result-artist" id="resultArtist">—</div>
+        <div class="result-actions">
+          <a id="ytLink" href="#" target="_blank" rel="noopener" class="btn-play">▶ &nbsp; Play on YouTube</a>
+          <button class="btn-another" onclick="randomize()">🔀 &nbsp; Another One</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HISTORY ── -->
+  <div id="historySection" style="display:none">
+    <hr class="divider" />
+    <div class="section-label" style="margin-bottom:12px">Recently Played</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</div>
+
+<script>
+
+// normalise song format for both built-in and fetched
+function makeSong(title, artistName) {
+  return { title, q: `${artistName} ${title} official` };
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────
+let customArtists = JSON.parse(localStorage.getItem('mrCustom') || '[]');
+let selected = new Set(JSON.parse(localStorage.getItem('mrSelected') || '[]'));
+let history  = [];
+
+function allArtists() { return customArtists; }
+function saveState()  { localStorage.setItem('mrCustom', JSON.stringify(customArtists)); }
+function saveSelected(){ localStorage.setItem('mrSelected', JSON.stringify([...selected])); }
+
+// ── GRID ──────────────────────────────────────────────────────────────
+function renderGrid() {
+  const q    = document.getElementById('filterInput').value.toLowerCase().trim();
+  const list = q ? allArtists().filter(a => a.name.toLowerCase().includes(q)) : allArtists();
+  const grid = document.getElementById('artistGrid');
+  grid.innerHTML = '';
+
+  list.forEach(artist => {
+    const card = document.createElement('div');
+    const isSel = selected.has(artist.name);
+    card.className = 'artist-card' + (isSel ? ' selected' : '') + (artist.loading ? ' loading' : '');
+    card.onclick = e => { if (e.target.classList.contains('delete-btn')) return; toggle(artist.name); };
+
+    card.innerHTML = `
+      <span class="checkmark">✓</span>
+      <button class="delete-btn" title="Remove" onclick="removeArtist('${artist.name.replace(/'/g,"\\'")}')">✕</button>
+      <span class="avatar">${artist.loading ? '<span class="card-spinner"></span>' : artist.emoji}</span>
+      <div class="name">${artist.name}</div>
+      <div class="song-count">${artist.loading ? 'Fetching…' : artist.songs.length + ' songs'}</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  const noMatch = document.getElementById('noMatch');
+  if (!customArtists.length) {
+    noMatch.textContent = 'No artists yet — type a name above and click Add!';
+    noMatch.style.display = 'block';
+  } else {
+    noMatch.textContent = 'No artists match your filter.';
+    noMatch.style.display = (!list.length && q) ? 'block' : 'none';
+  }
+  updateSpinBtn();
+}
+
+function toggle(name) {
+  if (selected.has(name)) selected.delete(name);
+  else                     selected.add(name);
+  saveSelected();
+  renderGrid();
+}
+
+function selectAll()  { allArtists().forEach(a => selected.add(a.name)); saveSelected(); renderGrid(); }
+function clearAll()   { selected.clear(); saveSelected(); renderGrid(); }
+
+function removeArtist(name) {
+  customArtists = customArtists.filter(a => a.name !== name);
+  selected.delete(name);
+  saveState(); saveSelected(); renderGrid();
+}
+
+function removeAll() {
+  selected.clear();
+  customArtists = [];
+  saveState(); saveSelected(); renderGrid();
+}
+
+function updateSpinBtn() {
+  const btn  = document.getElementById('spinBtn');
+  const hint = document.getElementById('spinHint');
+  const pool = buildPool();
+  if (!pool.length) {
+    btn.disabled = true;
+    hint.textContent = selected.size ? 'Selected artists have no songs yet — try again shortly' : 'Select at least one artist above';
+  } else {
+    btn.disabled = false;
+    hint.textContent = `${selected.size} artist${selected.size > 1 ? 's' : ''} · ${pool.length} songs in the pool`;
+  }
+}
+
+// ── ADD ARTIST (iTunes API) ───────────────────────────────────────────
+async function addArtist() {
+  const input  = document.getElementById('newArtistInput');
+  const errEl  = document.getElementById('addError');
+  const addBtn = document.getElementById('addBtn');
+  const name   = input.value.trim();
+
+  errEl.style.display = 'none';
+
+  if (!name) { showErr('Please type an artist name.'); return; }
+
+  const exists = allArtists().find(a => a.name.toLowerCase() === name.toLowerCase());
+  if (exists) { showErr(`"${exists.name}" is already in the list.`); return; }
+
+  // placeholder card while fetching
+  const placeholder = { name, emoji: '🎵', songs: [], custom: true, loading: true };
+  customArtists.push(placeholder);
+  selected.add(name);
+  input.value = '';
+  addBtn.disabled = true;
+  renderGrid();
+
+  try {
+    const songs = await fetchSongs(name);
+    const idx   = customArtists.findIndex(a => a.name === name);
+    if (idx === -1) return; // was deleted while loading
+
+    if (!songs.length) {
+      customArtists.splice(idx, 1);
+      selected.delete(name);
+      showErr(`No songs found for "${name}". Check the spelling and try again.`);
+    } else {
+      customArtists[idx] = { name, emoji: pickEmoji(), songs, custom: true, loading: false };
+    }
+  } catch (e) {
+    const idx = customArtists.findIndex(a => a.name === name);
+    if (idx !== -1) customArtists.splice(idx, 1);
+    selected.delete(name);
+    showErr('Network error — check your connection and try again.');
+  }
+
+  addBtn.disabled = false;
+  saveState(); saveSelected(); renderGrid();
+}
+
+function fetchSongs(artistName) {
+  // JSONP works from file:// in all browsers (fetch is blocked by Safari from file://)
+  return new Promise((resolve, reject) => {
+    const cbName = '_itunes_' + Date.now();
+    const timer  = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 10000);
+    const script = document.createElement('script');
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(data) {
+      cleanup();
+      const norm   = artistName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const tracks = (data.results || [])
+        .filter(r => r.wrapperType === 'track' && r.kind === 'song')
+        .filter(r => {
+          const an = (r.artistName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return an.includes(norm) || norm.includes(an);
+        });
+      const seen = new Set();
+      resolve(tracks
+        .filter(r => { const t = r.trackName.toLowerCase(); if (seen.has(t)) return false; seen.add(t); return true; })
+        .map(r => makeSong(r.trackName, r.artistName)));
+    };
+
+    script.onerror = () => { cleanup(); reject(new Error('load error')); };
+    script.src = `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=song&limit=50&media=music&callback=${cbName}`;
+    document.head.appendChild(script);
+  });
+}
+
+function showErr(msg) {
+  const el = document.getElementById('addError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+const EMOJIS = ['🎵','🎤','🎸','🥁','🎹','🎷','🎺','🌟','🔥','💫','⚡','🎭','💎','🌈','🌙'];
+function pickEmoji() { return EMOJIS[Math.floor(Math.random() * EMOJIS.length)]; }
+
+// ── RANDOMIZE ─────────────────────────────────────────────────────────
+function buildPool() {
+  const pool = [];
+  allArtists().forEach(a => {
+    if (selected.has(a.name) && !a.loading)
+      a.songs.forEach(s => pool.push({ ...s, artist: a.name, emoji: a.emoji }));
+  });
+  return pool;
+}
+
+function randomize() {
+  const pool = buildPool();
+  if (!pool.length) return;
+
+  const btn = document.getElementById('spinBtn');
+  btn.classList.add('spinning');
+  setTimeout(() => btn.classList.remove('spinning'), 350);
+
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  const url  = `https://www.youtube.com/results?search_query=${encodeURIComponent(pick.q)}`;
+
+  const card = document.getElementById('resultCard');
+  card.classList.remove('show');
+  void card.offsetWidth;
+  card.classList.add('show');
+
+  document.getElementById('resultTitle').textContent  = pick.title;
+  document.getElementById('resultArtist').textContent = `— ${pick.artist}`;
+  document.getElementById('resultDisc').textContent   = pick.emoji;
+  document.getElementById('ytLink').href              = url;
+
+  history.unshift({ ...pick, url });
+  if (history.length > 10) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const section = document.getElementById('historySection');
+  const list    = document.getElementById('historyList');
+  if (!history.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = history.map((h, i) => `
+    <a class="history-item" href="${h.url}" target="_blank" rel="noopener">
+      <span class="history-num">${i + 1}</span>
+      <span class="history-dot"></span>
+      <span class="history-info">
+        <div class="history-song">${h.title}</div>
+        <div class="history-artist">${h.artist}</div>
+      </span>
+      <span class="history-yt">▶ YouTube</span>
+    </a>
+  `).join('');
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === ' ' && e.target === document.body) { e.preventDefault(); randomize(); }
+});
+
+// ── BOOT ──────────────────────────────────────────────────────────────
+renderGrid();
+</script>
+</body>
+</html>
