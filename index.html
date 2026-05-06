@@ -543,7 +543,7 @@
         <div class="result-title" id="resultTitle">—</div>
         <div class="result-artist" id="resultArtist">—</div>
         <div class="result-actions">
-          <a id="ytLink" href="#" target="_blank" rel="noopener" class="btn-play">▶ &nbsp; Play on YouTube</a>
+          <a id="ytLink" href="#" target="_blank" rel="noopener" class="btn-play">▶ &nbsp; Open in YouTube Music</a>
           <button class="btn-another" onclick="randomize()">🔀 &nbsp; Another One</button>
         </div>
       </div>
@@ -751,7 +751,7 @@ function randomize() {
   setTimeout(() => btn.classList.remove('spinning'), 350);
 
   const pick = pool[Math.floor(Math.random() * pool.length)];
-  const url  = `https://www.youtube.com/results?search_query=${encodeURIComponent(pick.q)}`;
+  const url  = `https://music.youtube.com/search?q=${encodeURIComponent(pick.q)}`;
 
   const card = document.getElementById('resultCard');
   card.classList.remove('show');
@@ -763,7 +763,8 @@ function randomize() {
   document.getElementById('resultDisc').textContent   = pick.emoji;
   document.getElementById('ytLink').href              = url;
 
-  history.unshift({ ...pick, url });
+  const entry = { ...pick, url };
+  history.unshift(entry);
   if (history.length > 10) history.pop();
   renderHistory();
 }
