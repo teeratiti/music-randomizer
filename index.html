@@ -689,38 +689,23 @@ async function addArtist() {
   saveState(); saveSelected(); renderGrid();
 }
 
-function fetchSongs(artistName) {
-  // JSONP works from file:// in all browsers (fetch is blocked by Safari from file://)
-  return new Promise((resolve, reject) => {
-    const cbName = '_itunes_' + Date.now();
-    const timer  = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 10000);
-    const script = document.createElement('script');
+async function fetchSongs(artistName) {
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=song&limit=50&media=music`;
+  const res  = await fetch(url);
+  const data = await res.json();
 
-    function cleanup() {
-      clearTimeout(timer);
-      delete window[cbName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-    }
+  const norm   = artistName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const tracks = (data.results || [])
+    .filter(r => r.wrapperType === 'track' && r.kind === 'song')
+    .filter(r => {
+      const an = (r.artistName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return an.includes(norm) || norm.includes(an);
+    });
 
-    window[cbName] = function(data) {
-      cleanup();
-      const norm   = artistName.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const tracks = (data.results || [])
-        .filter(r => r.wrapperType === 'track' && r.kind === 'song')
-        .filter(r => {
-          const an = (r.artistName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-          return an.includes(norm) || norm.includes(an);
-        });
-      const seen = new Set();
-      resolve(tracks
-        .filter(r => { const t = r.trackName.toLowerCase(); if (seen.has(t)) return false; seen.add(t); return true; })
-        .map(r => makeSong(r.trackName, r.artistName)));
-    };
-
-    script.onerror = () => { cleanup(); reject(new Error('load error')); };
-    script.src = `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=song&limit=50&media=music&callback=${cbName}`;
-    document.head.appendChild(script);
-  });
+  const seen = new Set();
+  return tracks
+    .filter(r => { const t = r.trackName.toLowerCase(); if (seen.has(t)) return false; seen.add(t); return true; })
+    .map(r => makeSong(r.trackName, r.artistName));
 }
 
 function showErr(msg) {
